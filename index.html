@@ -3,150 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gyro HSV Control</title>
+  <title>Battery API Example</title>
   <style>
     body {
       margin: 0;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background-color: black;
-      color: white;
       font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      transition: background-color 0.3s ease;
     }
-
-    #gyro-data {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 10px;
-      border-radius: 8px;
-      font-size: 14px;
-      z-index: 1000;
-    }
-
-    button {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 5px;
-      background-color: #444;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #666;
+    h1 {
+      font-size: 24px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div id="gyro-data">Waiting for gyro data...</div>
-  <button id="random-color">Random Color</button>
-
+  <h1>Check Battery Charging Status</h1>
   <script>
-    const gyroDataDisplay = document.getElementById('gyro-data');
-    const randomColorButton = document.getElementById('random-color');
-
-    // 초기 HSV 값
-    let h = 0; // 색상 (0 ~ 360)
-    let s = 50; // 채도 (10 ~ 100)
-    let v = 50; // 밝기 (10 ~ 100)
-
-    const threshold = 1.5; // 노이즈 필터링
-    const speedS = 0.5; // S값 변화 속도
-    const speedV = 0.5; // V값 변화 속도
-
-    // 랜덤 색상 변경
-    randomColorButton.addEventListener('click', () => {
-      h = Math.random() * 360; // H값을 0~360의 랜덤값으로 설정
-      updateBackgroundColor();
-    });
-
-    // 권한 요청 (iOS Safari 대응)
-    document.body.addEventListener('click', async () => {
-      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        try {
-          const permission = await DeviceOrientationEvent.requestPermission();
-          if (permission === 'granted') {
-            console.log('Gyro permission granted');
-          } else {
-            console.error('Permission denied');
-          }
-        } catch (error) {
-          console.error('Permission request error:', error);
+    // Battery API 사용
+    navigator.getBattery().then((battery) => {
+      // 배경색을 설정하는 함수
+      const updateBackground = () => {
+        if (battery.charging) {
+          document.body.style.backgroundColor = "green";
+        } else {
+          document.body.style.backgroundColor = "white";
         }
-      } else {
-        console.log('Permission not required for this browser.');
-      }
+      };
+
+      // 초기 배경색 설정
+      updateBackground();
+
+      // 충전 상태 변화 감지
+      battery.addEventListener("chargingchange", updateBackground);
     });
-
-    // 움직임 감지 함수
-    window.addEventListener('deviceorientation', (event) => {
-      const { beta, gamma } = event; // beta: 위/아래, gamma: 좌/우
-
-      // 노이즈 필터링
-      const filteredBeta = Math.abs(beta) > threshold ? beta : 0;
-      const filteredGamma = Math.abs(gamma) > threshold ? gamma : 0;
-
-      // S 값 (채도) 업데이트: gamma 값에 따라
-      s += filteredGamma * speedS;
-      s = Math.max(10, Math.min(100, s)); // S값을 10~100 범위로 제한
-
-      // V 값 (밝기) 업데이트: beta 값에 따라
-      v += filteredBeta * speedV;
-      v = Math.max(10, Math.min(100, v)); // V값을 10~100 범위로 제한
-
-      // 배경색 업데이트
-      updateBackgroundColor();
-
-      // 자이로 데이터 표시
-      gyroDataDisplay.innerText = `
-        Gyro Data:
-        Beta (V control): ${beta.toFixed(2)}
-        Gamma (S control): ${gamma.toFixed(2)}
-        HSV Values:
-        H: ${h.toFixed(0)}°
-        S: ${s.toFixed(0)}%
-        V: ${v.toFixed(0)}%
-      `;
-    });
-
-    // HSV -> RGB 변환 함수
-    function hsvToRgb(h, s, v) {
-      s /= 100;
-      v /= 100;
-      const c = v * s;
-      const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-      const m = v - c;
-
-      let r = 0, g = 0, b = 0;
-      if (0 <= h && h < 60) [r, g, b] = [c, x, 0];
-      else if (60 <= h && h < 120) [r, g, b] = [x, c, 0];
-      else if (120 <= h && h < 180) [r, g, b] = [0, c, x];
-      else if (180 <= h && h < 240) [r, g, b] = [0, x, c];
-      else if (240 <= h && h < 300) [r, g, b] = [x, 0, c];
-      else if (300 <= h && h < 360) [r, g, b] = [c, 0, x];
-
-      r = Math.round((r + m) * 255);
-      g = Math.round((g + m) * 255);
-      b = Math.round((b + m) * 255);
-
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    // 배경색 업데이트 (HSV → RGB 변환)
-    function updateBackgroundColor() {
-      const rgbColor = hsvToRgb(h, s, v);
-      document.body.style.backgroundColor = rgbColor;
-    }
   </script>
 </body>
 </html>
