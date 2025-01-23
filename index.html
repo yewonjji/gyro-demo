@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gyro Cube with Sphere</title>
+  <title>Gyro HSV Control</title>
   <style>
     body {
       margin: 0;
@@ -12,28 +12,9 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
-      background-color: #f0f0f0;
-      position: relative;
-    }
-
-    #outer-cube {
-      width: 300px;
-      height: 300px;
-      background-color: rgba(0, 0, 0, 0.1);
-      position: relative;
-      border: 2px solid black;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #sphere {
-      width: 50px;
-      height: 50px;
-      background-color: #ff6347;
-      border-radius: 50%;
-      position: absolute;
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
     }
 
     #gyro-data {
@@ -51,23 +32,18 @@
 </head>
 <body>
   <div id="gyro-data">Waiting for gyro data...</div>
-  <div id="outer-cube">
-    <div id="sphere"></div>
-  </div>
 
   <script>
-    const sphere = document.getElementById('sphere');
-    const outerCube = document.getElementById('outer-cube');
     const gyroDataDisplay = document.getElementById('gyro-data');
 
-    const outerCubeSize = 300; // 큐브 크기 (300px)
-    const sphereSize = 50; // 구 크기 (50px)
+    // 초기 HSV 값
+    let h = 0; // 색상 (0 ~ 360)
+    let s = 100; // 채도 (고정)
+    let v = 50; // 밝기 (0 ~ 100)
 
-    let x = (outerCubeSize - sphereSize) / 2; // 초기 x 위치 (큐브 중앙)
-    let y = (outerCubeSize - sphereSize) / 2; // 초기 y 위치 (큐브 중앙)
-
-    const speed = 0.5; // 움직임 속도
     const threshold = 1.5; // 노이즈 필터링
+    const speedH = 0.5; // H값 변화 속도
+    const speedV = 0.5; // V값 변화 속도
 
     // 권한 요청 (iOS Safari 대응)
     document.body.addEventListener('click', async () => {
@@ -95,29 +71,57 @@
       const filteredBeta = Math.abs(beta) > threshold ? beta : 0;
       const filteredGamma = Math.abs(gamma) > threshold ? gamma : 0;
 
-      // 구 위치 계산 (큐브 크기 내부로 제한)
-      x += filteredGamma * speed;
-      y += filteredBeta * speed;
+      // H 값 (색상) 업데이트: beta 값에 따라
+      h += filteredBeta * speedH;
+      h = (h + 360) % 360; // H값을 0~360 범위로 제한
 
-      // 구가 큐브 내부에만 있도록 경계 제한
-      const maxPosition = outerCubeSize - sphereSize; // 큐브 크기에서 구 크기를 뺀 최대 이동 가능 범위
-      x = Math.max(0, Math.min(maxPosition, x));
-      y = Math.max(0, Math.min(maxPosition, y));
+      // V 값 (밝기) 업데이트: gamma 값에 따라
+      v += filteredGamma * speedV;
+      v = Math.max(0, Math.min(100, v)); // V값을 0~100 범위로 제한
 
-      // 구 위치 업데이트
-      sphere.style.transform = `translate(${x}px, ${y}px)`;
+      // 배경색 업데이트
+      document.body.style.backgroundColor = `hsv(${h.toFixed(0)}, ${s}%, ${v}%)`;
 
       // 자이로 데이터 표시
       gyroDataDisplay.innerText = `
         Gyro Data:
-        Beta (up/down): ${beta.toFixed(2)}
-        Gamma (left/right): ${gamma.toFixed(2)}
-        Filtered Beta: ${filteredBeta.toFixed(2)}
-        Filtered Gamma: ${filteredGamma.toFixed(2)}
-        X Position: ${x.toFixed(2)}
-        Y Position: ${y.toFixed(2)}
+        Beta (H control): ${beta.toFixed(2)}
+        Gamma (V control): ${gamma.toFixed(2)}
+        HSV Values:
+        H: ${h.toFixed(0)}°
+        S: ${s}%
+        V: ${v.toFixed(0)}%
       `;
     });
+
+    // HSV -> RGB 변환 함수
+    function hsvToRgb(h, s, v) {
+      s /= 100;
+      v /= 100;
+      const c = v * s;
+      const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+      const m = v - c;
+
+      let r = 0, g = 0, b = 0;
+      if (0 <= h && h < 60) [r, g, b] = [c, x, 0];
+      else if (60 <= h && h < 120) [r, g, b] = [x, c, 0];
+      else if (120 <= h && h < 180) [r, g, b] = [0, c, x];
+      else if (180 <= h && h < 240) [r, g, b] = [0, x, c];
+      else if (240 <= h && h < 300) [r, g, b] = [x, 0, c];
+      else if (300 <= h && h < 360) [r, g, b] = [c, 0, x];
+
+      r = Math.round((r + m) * 255);
+      g = Math.round((g + m) * 255);
+      b = Math.round((b + m) * 255);
+
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // 배경색 업데이트 (HSV → RGB 변환)
+    function updateBackgroundColor() {
+      const rgbColor = hsvToRgb(h, s, v);
+      document.body.style.backgroundColor = rgbColor;
+    }
   </script>
 </body>
 </html>
