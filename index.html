@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gyro Data</title>
+</head>
+<body>
+  <h1>Gyroscope Data</h1>
+  <p id="gyro-data">Waiting for data...</p>
+  <button id="request-permission">Request Permission</button>
+
+  <script>
+    const gyroDataDisplay = document.getElementById('gyro-data');
+    const requestPermissionButton = document.getElementById('request-permission');
+
+    // iOS 권한 요청 처리
+    requestPermissionButton.addEventListener('click', async () => {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const permission = await DeviceOrientationEvent.requestPermission();
+          if (permission === 'granted') {
+            startGyroTracking();
+          } else {
+            gyroDataDisplay.innerText = 'Permission denied.';
+          }
+        } catch (e) {
+          console.error(e);
+          gyroDataDisplay.innerText = 'Permission request failed.';
+        }
+      } else {
+        // Android 및 일반 브라우저는 권한 없이 작동
+        startGyroTracking();
+      }
+    });
+
+    function startGyroTracking() {
+      window.addEventListener('deviceorientation', (event) => {
+        const { alpha, beta, gamma } = event; // alpha: Yaw, beta: Pitch, gamma: Roll
+        gyroDataDisplay.innerText = `
+          Alpha (yaw): ${alpha.toFixed(2)}\n
+          Beta (pitch): ${beta.toFixed(2)}\n
+          Gamma (roll): ${gamma.toFixed(2)}
+        `;
+      });
+    }
+  </script>
+</body>
+</html>
