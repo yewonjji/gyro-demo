@@ -28,22 +28,47 @@
       font-size: 14px;
       z-index: 1000;
     }
+
+    button {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #444;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #666;
+    }
   </style>
 </head>
 <body>
   <div id="gyro-data">Waiting for gyro data...</div>
+  <button id="random-color">Random Color</button>
 
   <script>
     const gyroDataDisplay = document.getElementById('gyro-data');
+    const randomColorButton = document.getElementById('random-color');
 
     // 초기 HSV 값
     let h = 0; // 색상 (0 ~ 360)
-    let s = 100; // 채도 (고정)
-    let v = 50; // 밝기 (0 ~ 100)
+    let s = 50; // 채도 (10 ~ 100)
+    let v = 50; // 밝기 (10 ~ 100)
 
     const threshold = 1.5; // 노이즈 필터링
-    const speedH = 0.5; // H값 변화 속도
+    const speedS = 0.5; // S값 변화 속도
     const speedV = 0.5; // V값 변화 속도
+
+    // 랜덤 색상 변경
+    randomColorButton.addEventListener('click', () => {
+      h = Math.random() * 360; // H값을 0~360의 랜덤값으로 설정
+      updateBackgroundColor();
+    });
 
     // 권한 요청 (iOS Safari 대응)
     document.body.addEventListener('click', async () => {
@@ -71,28 +96,26 @@
       const filteredBeta = Math.abs(beta) > threshold ? beta : 0;
       const filteredGamma = Math.abs(gamma) > threshold ? gamma : 0;
 
-      // H 값 (색상) 업데이트: beta 값에 따라
-      h += filteredBeta * speedH;
-      h = (h + 360) % 360; // H값을 0~360 범위로 제한
+      // S 값 (채도) 업데이트: gamma 값에 따라
+      s += filteredGamma * speedS;
+      s = Math.max(10, Math.min(100, s)); // S값을 10~100 범위로 제한
 
-      // V 값 (밝기) 업데이트: gamma 값에 따라
-      v += filteredGamma * speedV;
-      v = Math.max(0, Math.min(100, v)); // V값을 0~100 범위로 제한
+      // V 값 (밝기) 업데이트: beta 값에 따라
+      v += filteredBeta * speedV;
+      v = Math.max(10, Math.min(100, v)); // V값을 10~100 범위로 제한
 
       // 배경색 업데이트
-      const rgbColor = hsvToRgb(h, s, v);
-      document.body.style.backgroundColor = rgbColor;
+      updateBackgroundColor();
 
       // 자이로 데이터 표시
       gyroDataDisplay.innerText = `
         Gyro Data:
-        Beta (H control): ${beta.toFixed(2)}
-        Gamma (V control): ${gamma.toFixed(2)}
+        Beta (V control): ${beta.toFixed(2)}
+        Gamma (S control): ${gamma.toFixed(2)}
         HSV Values:
         H: ${h.toFixed(0)}°
-        S: ${s}%
+        S: ${s.toFixed(0)}%
         V: ${v.toFixed(0)}%
-        RGB: ${rgbColor}
       `;
     });
 
@@ -117,6 +140,12 @@
       b = Math.round((b + m) * 255);
 
       return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // 배경색 업데이트 (HSV → RGB 변환)
+    function updateBackgroundColor() {
+      const rgbColor = hsvToRgb(h, s, v);
+      document.body.style.backgroundColor = rgbColor;
     }
   </script>
 </body>
