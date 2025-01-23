@@ -3,47 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gyro Data</title>
+  <title>Gyro Cube</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+
+    #cube {
+      width: 50px;
+      height: 50px;
+      background-color: #ff6347;
+      position: absolute;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Gyroscope Data</h1>
-  <p id="gyro-data">Waiting for data...</p>
-  <button id="request-permission">Request Permission</button>
+  <div id="cube"></div>
 
   <script>
-    const gyroDataDisplay = document.getElementById('gyro-data');
-    const requestPermissionButton = document.getElementById('request-permission');
+    const cube = document.getElementById('cube');
+    let x = window.innerWidth / 2; // 화면 중앙
+    let y = window.innerHeight / 2;
 
-    // iOS 권한 요청 처리
-    requestPermissionButton.addEventListener('click', async () => {
-      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        try {
-          const permission = await DeviceOrientationEvent.requestPermission();
-          if (permission === 'granted') {
-            startGyroTracking();
-          } else {
-            gyroDataDisplay.innerText = 'Permission denied.';
-          }
-        } catch (e) {
-          console.error(e);
-          gyroDataDisplay.innerText = 'Permission request failed.';
+    // 권한 요청
+    document.body.addEventListener('click', async () => {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try {
+                const permission = await DeviceOrientationEvent.requestPermission();
+                if (permission === 'granted') {
+                    console.log('Gyro permission granted');
+                } else {
+                    console.error('Permission denied');
+                }
+            } catch (error) {
+                console.error('Permission request error:', error);
+            }
+        } else {
+            console.log('Permission not required for this browser.');
         }
-      } else {
-        // Android 및 일반 브라우저는 권한 없이 작동
-        startGyroTracking();
-      }
     });
 
-    function startGyroTracking() {
-      window.addEventListener('deviceorientation', (event) => {
-        const { alpha, beta, gamma } = event; // alpha: Yaw, beta: Pitch, gamma: Roll
-        gyroDataDisplay.innerText = `
-          Alpha (yaw): ${alpha.toFixed(2)}\n
-          Beta (pitch): ${beta.toFixed(2)}\n
-          Gamma (roll): ${gamma.toFixed(2)}
-        `;
-      });
-    }
+    // 움직임 감지 함수
+    window.addEventListener('deviceorientation', (event) => {
+        const { beta, gamma } = event; // beta: 위/아래, gamma: 좌/우
+
+        const speed = 2; // 감도 설정
+
+        x += gamma * speed; // 좌우 이동
+        y += beta * speed;  // 위아래 이동
+
+        // 화면 경계에 큐브가 벗어나지 않도록 제한
+        x = Math.max(0, Math.min(window.innerWidth - 50, x));
+        y = Math.max(0, Math.min(window.innerHeight - 50, y));
+
+        // 큐브 위치 업데이트
+        cube.style.transform = `translate(${x}px, ${y}px)`;
+    });
   </script>
 </body>
 </html>
