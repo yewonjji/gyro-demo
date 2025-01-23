@@ -57,6 +57,7 @@
 
   <script>
     const sphere = document.getElementById('sphere');
+    const outerCube = document.getElementById('outer-cube');
     const gyroDataDisplay = document.getElementById('gyro-data');
 
     const outerCubeSize = 300; // 큐브 크기 (300px)
@@ -99,8 +100,9 @@
       y += filteredBeta * speed;
 
       // 구가 큐브 내부에만 있도록 경계 제한
-      x = Math.max(0, Math.min(outerCubeSize - sphereSize, x));
-      y = Math.max(0, Math.min(outerCubeSize - sphereSize, y));
+      const maxPosition = outerCubeSize - sphereSize; // 큐브 크기에서 구 크기를 뺀 최대 이동 가능 범위
+      x = Math.max(0, Math.min(maxPosition, x));
+      y = Math.max(0, Math.min(maxPosition, y));
 
       // 구 위치 업데이트
       sphere.style.transform = `translate(${x}px, ${y}px)`;
