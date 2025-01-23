@@ -22,7 +22,7 @@
       background-color: #ff6347;
       position: absolute;
       border-radius: 8px;
-      top: 50%; /* 초기 위치를 중앙에 배치 */
+      top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
     }
@@ -36,6 +36,7 @@
       padding: 10px;
       border-radius: 8px;
       font-size: 14px;
+      z-index: 1000;
     }
   </style>
 </head>
@@ -46,10 +47,17 @@
   <script>
     const cube = document.getElementById('cube');
     const gyroDataDisplay = document.getElementById('gyro-data');
-    let x = window.innerWidth / 2 - 25; // 화면 중앙에 큐브의 초기 위치 설정 (큐브 크기 반영)
+
+    let x = window.innerWidth / 2 - 25; // 화면 중앙 위치 (큐브 크기 고려)
     let y = window.innerHeight / 2 - 25;
 
-    // 권한 요청
+    // 최소 움직임 감지 범위 (노이즈 필터링)
+    const threshold = 1.5;
+
+    // 민감도 설정
+    const speed = 0.3;
+
+    // 권한 요청 (iOS Safari 대응)
     document.body.addEventListener('click', async () => {
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
@@ -71,10 +79,13 @@
     window.addEventListener('deviceorientation', (event) => {
         const { beta, gamma } = event; // beta: 위/아래, gamma: 좌/우
 
-        const speed = 0.5; // 감도 설정 (낮을수록 덜 민감함)
+        // 노이즈 필터링 (작은 변화 무시)
+        const filteredBeta = Math.abs(beta) > threshold ? beta : 0;
+        const filteredGamma = Math.abs(gamma) > threshold ? gamma : 0;
 
-        x += gamma * speed; // 좌우 이동
-        y += beta * speed;  // 위아래 이동
+        // 위치 계산
+        x += filteredGamma * speed; // 좌우 이동
+        y += filteredBeta * speed;  // 위아래 이동
 
         // 화면 경계에 큐브가 벗어나지 않도록 제한
         x = Math.max(0, Math.min(window.innerWidth - 50, x));
@@ -88,6 +99,8 @@
           Gyro Data:
           Beta (up/down): ${beta.toFixed(2)}
           Gamma (left/right): ${gamma.toFixed(2)}
+          Filtered Beta: ${filteredBeta.toFixed(2)}
+          Filtered Gamma: ${filteredGamma.toFixed(2)}
           X Position: ${x.toFixed(2)}
           Y Position: ${y.toFixed(2)}
         `;
