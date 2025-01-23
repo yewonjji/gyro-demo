@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gyro Cube</title>
+  <title>Gyro Cube with Sphere</title>
   <style>
     body {
       margin: 0;
@@ -16,15 +16,24 @@
       position: relative;
     }
 
-    #cube {
+    #outer-cube {
+      width: 300px;
+      height: 300px;
+      background-color: rgba(0, 0, 0, 0.1);
+      position: relative;
+      border: 2px solid black;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #sphere {
       width: 50px;
       height: 50px;
       background-color: #ff6347;
+      border-radius: 50%;
       position: absolute;
-      border-radius: 8px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
     }
 
     #gyro-data {
@@ -42,68 +51,70 @@
 </head>
 <body>
   <div id="gyro-data">Waiting for gyro data...</div>
-  <div id="cube"></div>
+  <div id="outer-cube">
+    <div id="sphere"></div>
+  </div>
 
   <script>
-    const cube = document.getElementById('cube');
+    const sphere = document.getElementById('sphere');
     const gyroDataDisplay = document.getElementById('gyro-data');
 
-    let x = window.innerWidth / 2 - 25; // 화면 중앙 위치 (큐브 크기 고려)
-    let y = window.innerHeight / 2 - 25;
+    const outerCubeSize = 300; // 큐브 크기 (300px)
+    const sphereSize = 50; // 구 크기 (50px)
 
-    // 최소 움직임 감지 범위 (노이즈 필터링)
-    const threshold = 1.5;
+    let x = (outerCubeSize - sphereSize) / 2; // 초기 x 위치 (큐브 중앙)
+    let y = (outerCubeSize - sphereSize) / 2; // 초기 y 위치 (큐브 중앙)
 
-    // 민감도 설정
-    const speed = 0.3;
+    const speed = 0.5; // 움직임 속도
+    const threshold = 1.5; // 노이즈 필터링
 
     // 권한 요청 (iOS Safari 대응)
     document.body.addEventListener('click', async () => {
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            try {
-                const permission = await DeviceOrientationEvent.requestPermission();
-                if (permission === 'granted') {
-                    console.log('Gyro permission granted');
-                } else {
-                    console.error('Permission denied');
-                }
-            } catch (error) {
-                console.error('Permission request error:', error);
-            }
-        } else {
-            console.log('Permission not required for this browser.');
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const permission = await DeviceOrientationEvent.requestPermission();
+          if (permission === 'granted') {
+            console.log('Gyro permission granted');
+          } else {
+            console.error('Permission denied');
+          }
+        } catch (error) {
+          console.error('Permission request error:', error);
         }
+      } else {
+        console.log('Permission not required for this browser.');
+      }
     });
 
     // 움직임 감지 함수
     window.addEventListener('deviceorientation', (event) => {
-        const { beta, gamma } = event; // beta: 위/아래, gamma: 좌/우
+      const { beta, gamma } = event; // beta: 위/아래, gamma: 좌/우
 
-        // 노이즈 필터링 (작은 변화 무시)
-        const filteredBeta = Math.abs(beta) > threshold ? beta : 0;
-        const filteredGamma = Math.abs(gamma) > threshold ? gamma : 0;
+      // 노이즈 필터링
+      const filteredBeta = Math.abs(beta) > threshold ? beta : 0;
+      const filteredGamma = Math.abs(gamma) > threshold ? gamma : 0;
 
-        // 위치 계산
-        x += filteredGamma * speed; // 좌우 이동
-        y += filteredBeta * speed;  // 위아래 이동
+      // 구 위치 계산 (큐브 크기 내부로 제한)
+      x += filteredGamma * speed;
+      y += filteredBeta * speed;
 
-        // 화면 경계에 큐브가 벗어나지 않도록 제한
-        x = Math.max(0, Math.min(window.innerWidth - 50, x));
-        y = Math.max(0, Math.min(window.innerHeight - 50, y));
+      // 구가 큐브 내부에만 있도록 경계 제한
+      x = Math.max(0, Math.min(outerCubeSize - sphereSize, x));
+      y = Math.max(0, Math.min(outerCubeSize - sphereSize, y));
 
-        // 큐브 위치 업데이트
-        cube.style.transform = `translate(${x}px, ${y}px)`;
+      // 구 위치 업데이트
+      sphere.style.transform = `translate(${x}px, ${y}px)`;
 
-        // 자이로 데이터 표시
-        gyroDataDisplay.innerText = `
-          Gyro Data:
-          Beta (up/down): ${beta.toFixed(2)}
-          Gamma (left/right): ${gamma.toFixed(2)}
-          Filtered Beta: ${filteredBeta.toFixed(2)}
-          Filtered Gamma: ${filteredGamma.toFixed(2)}
-          X Position: ${x.toFixed(2)}
-          Y Position: ${y.toFixed(2)}
-        `;
+      // 자이로 데이터 표시
+      gyroDataDisplay.innerText = `
+        Gyro Data:
+        Beta (up/down): ${beta.toFixed(2)}
+        Gamma (left/right): ${gamma.toFixed(2)}
+        Filtered Beta: ${filteredBeta.toFixed(2)}
+        Filtered Gamma: ${filteredGamma.toFixed(2)}
+        X Position: ${x.toFixed(2)}
+        Y Position: ${y.toFixed(2)}
+      `;
     });
   </script>
 </body>
