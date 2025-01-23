@@ -13,6 +13,7 @@
       justify-content: center;
       height: 100vh;
       background-color: #f0f0f0;
+      position: relative;
     }
 
     #cube {
@@ -21,16 +22,32 @@
       background-color: #ff6347;
       position: absolute;
       border-radius: 8px;
+      top: 50%; /* 초기 위치를 중앙에 배치 */
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #gyro-data {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
+  <div id="gyro-data">Waiting for gyro data...</div>
   <div id="cube"></div>
 
   <script>
     const cube = document.getElementById('cube');
-    let x = window.innerWidth / 2; // 화면 중앙
-    let y = window.innerHeight / 2;
+    const gyroDataDisplay = document.getElementById('gyro-data');
+    let x = window.innerWidth / 2 - 25; // 화면 중앙에 큐브의 초기 위치 설정 (큐브 크기 반영)
+    let y = window.innerHeight / 2 - 25;
 
     // 권한 요청
     document.body.addEventListener('click', async () => {
@@ -54,7 +71,7 @@
     window.addEventListener('deviceorientation', (event) => {
         const { beta, gamma } = event; // beta: 위/아래, gamma: 좌/우
 
-        const speed = 2; // 감도 설정
+        const speed = 0.5; // 감도 설정 (낮을수록 덜 민감함)
 
         x += gamma * speed; // 좌우 이동
         y += beta * speed;  // 위아래 이동
@@ -65,6 +82,15 @@
 
         // 큐브 위치 업데이트
         cube.style.transform = `translate(${x}px, ${y}px)`;
+
+        // 자이로 데이터 표시
+        gyroDataDisplay.innerText = `
+          Gyro Data:
+          Beta (up/down): ${beta.toFixed(2)}
+          Gamma (left/right): ${gamma.toFixed(2)}
+          X Position: ${x.toFixed(2)}
+          Y Position: ${y.toFixed(2)}
+        `;
     });
   </script>
 </body>
