@@ -80,7 +80,8 @@
       v = Math.max(0, Math.min(100, v)); // V값을 0~100 범위로 제한
 
       // 배경색 업데이트
-      document.body.style.backgroundColor = `hsv(${h.toFixed(0)}, ${s}%, ${v}%)`;
+      const rgbColor = hsvToRgb(h, s, v);
+      document.body.style.backgroundColor = rgbColor;
 
       // 자이로 데이터 표시
       gyroDataDisplay.innerText = `
@@ -91,6 +92,7 @@
         H: ${h.toFixed(0)}°
         S: ${s}%
         V: ${v.toFixed(0)}%
+        RGB: ${rgbColor}
       `;
     });
 
@@ -115,12 +117,6 @@
       b = Math.round((b + m) * 255);
 
       return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    // 배경색 업데이트 (HSV → RGB 변환)
-    function updateBackgroundColor() {
-      const rgbColor = hsvToRgb(h, s, v);
-      document.body.style.backgroundColor = rgbColor;
     }
   </script>
 </body>
